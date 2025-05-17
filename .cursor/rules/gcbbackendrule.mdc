@@ -1,0 +1,416 @@
+---
+description:
+globs:
+alwaysApply: true
+---
+Standar Backend (NestJS)
+Struktur Direktori
+Gunakan struktur berbasis DDD (Domain-Driven Design) dengan pendekatan moderat:
+src/
+├── app.module.ts              # Application root module
+├── main.ts                    # Application entry point
+├── domain/                    # Domain model
+│   ├── user/                  # User domain
+│   │   ├── entities/          # Domain entities
+│   │   ├── repositories/      # Repository interfaces
+│   │   ├── dto/               # Data Transfer Objects
+│   │   └── user.service.ts    # Domain service
+│   ├── transaction/           # Transaction domain
+│   ├── waste/                 # Waste domain
+│   └── shared/                # Shared domain objects
+├── infrastructure/            # External concerns
+│   ├── database/              # Database connection, migrations
+│   │   ├── drizzle/           # Drizzle ORM config
+│   │   └── supabase/          # Supabase integration
+│   ├── config/                # Configuration
+│   ├── security/              # Auth, encryption
+│   └── external-services/     # External services integration
+├── interface/                 # User interface adapters
+│   ├── rest/                  # REST controllers
+│   │   ├── user/              # User-related endpoints
+│   │   ├── transaction/       # Transaction-related endpoints
+│   │   └── waste/             # Waste-related endpoints
+│   ├── websocket/             # WebSocket gateways
+│   └── graphql/               # GraphQL resolvers (if used)
+└── application/               # Application services
+    ├── use-cases/             # Use case implementations
+    ├── commands/              # Command handlers
+    ├── queries/               # Query handlers
+    └── services/              # Application services
+Penamaan Konvensi
+
+Entities:
+
+Gunakan singular name, PascalCase (User.entity.ts)
+Definisikan kolom menggunakan dekorator
+
+
+
+typescript// src/domain/user/entities/user.entity.ts
+import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
+
+@Entity('users')
+export class User {
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
+
+  @Column({ unique: true })
+  email: string;
+
+  @Column()
+  firstName: string;
+
+  @Column()
+  lastName: string;
+
+  // More properties
+}
+
+DTOs:
+
+PascalCase dengan suffix DTO
+Definisikan validasi dengan class-validator
+
+
+
+typescript// src/domain/user/dto/create-user.dto.ts
+import { IsEmail, IsNotEmpty, MinLength } from 'class-validator';
+
+export class CreateUserDto {
+  @IsEmail()
+  @IsNotEmpty()
+  email: string;
+
+  @IsNotEmpty()
+  firstName: string;
+
+  @IsNotEmpty()
+  lastName: string;
+
+  @IsNotEmpty()
+  @MinLength(8)
+  password: string;
+}
+
+Controllers:
+
+PascalCase dengan suffix Controller
+Gunakan dekorator untuk API documentation
+
+
+
+typescript// src/interface/rest/user/user.controller.ts
+import { Controller, Get, Post, Body, Param } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { UserService } from '@/domain/user/user.service';
+import { CreateUserDto } from '@/domain/user/dto/create-user.dto';
+import { User } from '@/domain/user/entities/user.entity';
+
+@ApiTags('users')
+@Controller('users')
+export class UserController {
+  constructor(private readonly userService: UserService) {}
+
+  @Post()
+  @ApiOperation({ summary: 'Create a new user' })
+  @ApiResponse({ status: 201, description: 'User created', type: User })
+  async create(@Body() createUserDto: CreateUserDto): Promise<User> {
+    return this.userService.create(createUserDto);
+  }
+
+  @Get(':id')
+  @ApiOperation({ summary: 'Get user by ID' })
+  @ApiResponse({ status: 200, description: 'User found', type: User })
+  @ApiResponse({ status: 404, description: 'User not found' })
+  async findById(@Param('id') id: string): Promise<User> {
+    return this.userService.findById(id);
+  }
+}
+
+Services:
+
+PascalCase dengan suffix Service
+Implement domain logic
+Handle exceptions
+
+
+typescript// src/domain/user/user.service.ts
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { UserRepository } from './repositories/user.repository';
+import { CreateUserDto } from './dto/create-user.dto';
+import { User } from './entities/user.entity';
+
+@Injectable()
+export class UserService {
+  constructor(private readonly userRepository: UserRepository) {}
+
+  async create(createUserDto: CreateUserDto): Promise<User> {
+    // Implementation
+  }
+
+  async findById(id: string): Promise<User> {
+    const user = await this.userRepository.findById(id);
+    if (!user) {
+      throw new NotFoundException(`User with ID ${id} not found`);
+    }
+    return user;
+  }
+}
+
+Repositories:
+
+PascalCase dengan suffix Repository
+Implement data access logic
+
+
+
+typescript// src/domain/user/repositories/user.repository.ts
+import { Injectable } from '@nestjs/common';
+import { eq } from 'drizzle-orm';
+import { DrizzleService } from '@/infrastructure/database/drizzle/drizzle.service';
+import { users } from '@/infrastructure/database/drizzle/schema';
+import { User } from '../entities/user.entity';
+
+@Injectable()
+export class UserRepository {
+  constructor(private readonly drizzle: DrizzleService) {}
+
+  async findById(id: string): Promise<User | null> {
+    const result = await this.drizzle.db
+      .select()
+      .from(users)
+      .where(eq(users.id, id))
+      .limit(1);
+
+    return result.length ? this.mapToEntity(result[0]) : null;
+  }
+
+  private mapToEntity(data: any): User {
+    // Mapping logic
+  }
+}
+Validasi
+
+DTO Validation:
+
+Gunakan class-validator untuk validasi input
+Tambahkan ValidationPipe secara global
+
+
+
+typescript// src/main.ts
+import { ValidationPipe } from '@nestjs/common';
+
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule);
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      transform: true,
+      forbidNonWhitelisted: true
+    })
+  );
+  // Other setup
+}
+
+Entity Validation:
+
+Tambahkan validasi domain di entity jika diperlukan
+Gunakan model value-objects untuk kompleksitas
+
+
+
+typescript// src/domain/user/value-objects/email.value-object.ts
+export class Email {
+  private readonly value: string;
+
+  constructor(email: string) {
+    if (!this.isValid(email)) {
+      throw new Error('Invalid email format');
+    }
+    this.value = email;
+  }
+
+  private isValid(email: string): boolean {
+    // Validation logic
+    return /\S+@\S+\.\S+/.test(email);
+  }
+
+  toString(): string {
+    return this.value;
+  }
+}
+Error Handling
+
+Exception Filters:
+
+Buat custom exception filter untuk handling error konsisten
+Gunakan NestJS built-in exceptions
+
+
+
+typescript// src/infrastructure/exception-filters/http-exception.filter.ts
+import { ExceptionFilter, Catch, ArgumentsHost, HttpException } from '@nestjs/common';
+import { Response } from 'express';
+
+@Catch(HttpException)
+export class HttpExceptionFilter implements ExceptionFilter {
+  catch(exception: HttpException, host: ArgumentsHost) {
+    const ctx = host.switchToHttp();
+    const response = ctx.getResponse<Response>();
+    const status = exception.getStatus();
+    const exceptionResponse = exception.getResponse();
+
+    response.status(status).json({
+      statusCode: status,
+      timestamp: new Date().toISOString(),
+      path: ctx.getRequest().url,
+      message:
+        typeof exceptionResponse === 'string'
+          ? exceptionResponse
+          : (exceptionResponse as any).message || exception.message,
+    });
+  }
+}
+
+Async/Await Pattern:
+
+Gunakan try/catch untuk exception handling
+Gunakan async/await untuk asynchronous code
+
+
+
+typescriptasync function someAsyncFunction() {
+  try {
+    const result = await someOperation();
+    return result;
+  } catch (error) {
+    // Handle specific errors
+    if (error instanceof SomeSpecificError) {
+      throw new BadRequestException(error.message);
+    }
+    // Re-throw other errors
+    throw error;
+  }
+}
+Testing
+
+Unit Testing:
+
+Setiap service dan repository harus memiliki unit tests
+Gunakan Jest untuk unit testing
+Mock dependencies
+
+
+
+typescript// src/domain/user/user.service.spec.ts
+import { Test } from '@nestjs/testing';
+import { UserService } from './user.service';
+import { UserRepository } from './repositories/user.repository';
+
+describe('UserService', () => {
+  let userService: UserService;
+  let userRepository: UserRepository;
+
+  beforeEach(async () => {
+    const moduleRef = await Test.createTestingModule({
+      providers: [
+        UserService,
+        {
+          provide: UserRepository,
+          useValue: {
+            findById: jest.fn(),
+            create: jest.fn(),
+          },
+        },
+      ],
+    }).compile();
+
+    userService = moduleRef.get<UserService>(UserService);
+    userRepository = moduleRef.get<UserRepository>(UserRepository);
+  });
+
+  describe('findById', () => {
+    it('should return a user when user exists', async () => {
+      // Test implementation
+    });
+
+    it('should throw NotFoundException when user does not exist', async () => {
+      // Test implementation
+    });
+  });
+});
+
+Integration Testing:
+
+Test API endpoints
+Use supertest for HTTP requests
+
+
+
+typescript// test/user.e2e-spec.ts
+import * as request from 'supertest';
+import { Test } from '@nestjs/testing';
+import { INestApplication } from '@nestjs/common';
+import { AppModule } from './../src/app.module';
+
+describe('UserController (e2e)', () => {
+  let app: INestApplication;
+
+  beforeAll(async () => {
+    const moduleFixture = await Test.createTestingModule({
+      imports: [AppModule],
+    }).compile();
+
+    app = moduleFixture.createNestApplication();
+    await app.init();
+  });
+
+  afterAll(async () => {
+    await app.close();
+  });
+
+  it('/users (POST)', () => {
+    return request(app.getHttpServer())
+      .post('/users')
+      .send({
+        email: 'test@example.com',
+        firstName: 'Test',
+        lastName: 'User',
+        password: 'password123',
+      })
+      .expect(201)
+      .expect(res => {
+        expect(res.body).toHaveProperty('id');
+        expect(res.body.email).toBe('test@example.com');
+      });
+  });
+});
+Documentation
+
+Swagger Documentation:
+
+Konfigurasikan Swagger untuk API documentation
+Gunakan dekorator untuk dokumentasi endpoint
+
+
+
+typescript// src/main.ts
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule);
+
+  const config = new DocumentBuilder()
+    .setTitle('GreenCycleBank API')
+    .setDescription('The GreenCycleBank API description')
+    .setVersion('1.0')
+    .addTag('greencyclebank')
+    .addBearerAuth()
+    .build();
+
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('api/docs', app, document);
+
+  await app.listen(3000);
+}
