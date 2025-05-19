@@ -6,6 +6,12 @@ module.exports = {
       // Pengaturan untuk Node.js
       NODE_ENV: "production",
       NODE_OPTIONS: "--max-old-space-size=512",
+      // Tambahkan placeholder untuk env vars - nilai sebenarnya akan diisi dari Koyeb Secret/Environment
+      DATABASE_URL: "KOYEB_SECRET",
+      FRONTEND_URL: "KOYEB_SECRET",
+      SENTRY_DSN: "KOYEB_SECRET",
+      JWT_SECRET: "KOYEB_SECRET",
+      JWT_EXPIRATION: "KOYEB_SECRET"
     },
     resources: {
       // Konfigurasi resource container di Koyeb

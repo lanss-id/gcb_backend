@@ -27,12 +27,16 @@ async function bootstrap() {
 
   // Security middleware
   app.use(helmet());
-  app.use(
-    cors({
-      origin: process.env.FRONTEND_URL || 'http://localhost:3000' || 'https://gcb-frontend.vercel.app/',
-      credentials: true,
-    }),
-  );
+
+  // Fix CORS configuration
+  const corsOptions = {
+    origin: [
+      process.env.FRONTEND_URL || 'http://localhost:3000',
+      'https://gcb-frontend.vercel.app'
+    ],
+    credentials: true,
+  };
+  app.use(cors(corsOptions));
 
   // Validasi
   app.useGlobalPipes(
@@ -59,7 +63,7 @@ async function bootstrap() {
   SwaggerModule.setup('api/docs', app, document);
 
   // Health check endpoint untuk Koyeb
-  app.getHttpAdapter().get('/api/health', (req, res) => {
+  app.getHttpAdapter().get('/api/health', (req: any, res: any) => {
     return res.status(200).json({ status: 'ok' });
   });
 
@@ -68,11 +72,14 @@ async function bootstrap() {
   await app.listen(port);
   console.log(`Application is running on: ${await app.getUrl()}`);
 
-  console.log('DATABASE_URL:', process.env.DATABASE_URL);
-  console.log('NODE_ENV:', process.env.NODE_ENV);
-  console.log('PORT:', process.env.PORT);
-  console.log('FRONTEND_URL:', process.env.FRONTEND_URL);
-  console.log('SENTRY_DSN:', process.env.SENTRY_DSN);
+  // Log environment variables untuk debugging
+  console.log('==== ENVIRONMENT VARIABLES ====');
+  console.log('DATABASE_URL:', process.env.DATABASE_URL ? 'Tersedia' : 'TIDAK TERSEDIA');
+  console.log('NODE_ENV:', process.env.NODE_ENV || 'TIDAK TERSEDIA');
+  console.log('PORT:', process.env.PORT || 'TIDAK TERSEDIA');
+  console.log('FRONTEND_URL:', process.env.FRONTEND_URL || 'TIDAK TERSEDIA');
+  console.log('SENTRY_DSN:', process.env.SENTRY_DSN ? 'Tersedia' : 'TIDAK TERSEDIA');
+  console.log('================================');
 }
 
 bootstrap();
