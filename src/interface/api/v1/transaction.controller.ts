@@ -9,6 +9,8 @@ import {
   UseGuards,
   Request,
   NotFoundException,
+  Req,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../../shared/guards/jwt-auth.guard';
@@ -16,6 +18,7 @@ import { TransactionService } from '../../../domain/transaction/transaction.serv
 import { CreateTransactionDto } from '../../../domain/transaction/dto/create-transaction.dto';
 import { UpdateTransactionDto } from '../../../domain/transaction/dto/update-transaction.dto';
 import { Public } from '../../../shared/decorators/public.decorator';
+import { GenerateQRCodeDto, ScanQRCodeDto, QRCodeResponseDto, QRVerificationResponseDto } from '../../../domain/transaction/dto/qr-transaction.dto';
 
 @ApiTags('transactions')
 @Controller({
@@ -48,12 +51,43 @@ export class TransactionController {
     return kategori;
   }
 
+  @Post('qr/generate')
+  @ApiOperation({ summary: 'Generate QR code for nasabah transaction' })
+  @ApiResponse({ status: 201, description: 'QR code generated', type: QRCodeResponseDto })
+  async generateQRCode(@Body() dto: GenerateQRCodeDto, @Req() req): Promise<QRCodeResponseDto> {
+    if (req.user.role !== 'nasabah' && req.user.id !== dto.nasabahId) {
+      throw new UnauthorizedException('Anda tidak berwenang untuk membuat QR code untuk nasabah ini');
+    }
+
+    if (!dto.nasabahId && req.user.role === 'nasabah') {
+      dto.nasabahId = req.user.id;
+    }
+
+    return this.transactionService.generateQRCode(dto);
+  }
+
+  @Post('qr/verify')
+  @ApiOperation({ summary: 'Verify QR code by bank sampah' })
+  @ApiResponse({ status: 200, description: 'QR code verified', type: QRVerificationResponseDto })
+  async verifyQRCode(@Body() dto: ScanQRCodeDto, @Req() req): Promise<QRVerificationResponseDto> {
+    if (req.user.role !== 'bank_sampah') {
+      throw new UnauthorizedException('Hanya bank sampah yang dapat memverifikasi QR code');
+    }
+
+    return this.transactionService.verifyQRCode(dto.qrCode, req.user.id);
+  }
+
   @Post()
-  @ApiOperation({ summary: 'Create a new transaction' })
-  @ApiResponse({ status: 201, description: 'Transaction created successfully' })
-  @ApiResponse({ status: 400, description: 'Bad request' })
-  async createTransaction(@Body() createTransactionDto: CreateTransactionDto, @Request() req) {
-    return this.transactionService.createTransaction(createTransactionDto);
+  @ApiOperation({ summary: 'Create new transaction' })
+  @ApiResponse({ status: 201, description: 'Transaction created' })
+  async createTransaction(@Body() dto: CreateTransactionDto, @Req() req) {
+    if (req.user.role !== 'bank_sampah') {
+      throw new UnauthorizedException('Hanya bank sampah yang dapat membuat transaksi');
+    }
+
+    dto.bankSampahId = req.user.id;
+
+    return this.transactionService.createTransaction(dto);
   }
 
   @Get()

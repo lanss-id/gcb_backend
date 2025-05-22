@@ -6,6 +6,8 @@ import { Pool } from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { seedUsers } from './seeders/user.seeder';
 import { sql } from 'drizzle-orm';
+import { MainSeeder } from './seeders/main-seeder';
+import { runMigrations } from './migrations';
 
 interface ColumnResult {
   column_name: string;
@@ -35,20 +37,26 @@ interface EnumResult {
       inject: [ConfigService],
     },
     DrizzleService,
+    MainSeeder,
   ],
   exports: ['DRIZZLE_DB', DrizzleService],
 })
 export class DrizzleModule implements OnModuleInit {
-  constructor(private readonly drizzleService: DrizzleService) {}
+  constructor(
+    private readonly drizzleService: DrizzleService,
+    private readonly mainSeeder: MainSeeder,
+  ) {}
 
   async onModuleInit() {
-    // Konfigurasi runtime untuk Drizzle
     if (process.env.NODE_ENV !== 'production') {
       try {
         console.log('Running schema updates...');
 
         // Cek enum yang dibutuhkan dan buat jika belum ada
         await this.ensureEnumsExist();
+
+        // Jalankan migrasi untuk membuat tabel-tabel yang dibutuhkan
+        await runMigrations(this.drizzleService);
 
         // Cek tabel-tabel yang dibutuhkan dan buat jika belum ada
         await this.ensureTablesExist();
@@ -61,6 +69,13 @@ export class DrizzleModule implements OnModuleInit {
         await seedUsers(this.drizzleService);
       } catch (error) {
         console.error('Error updating schema/running seeders:', error);
+      }
+    } else {
+      // Dalam produksi, hanya jalankan migrasi
+      try {
+        await runMigrations(this.drizzleService);
+      } catch (error) {
+        console.error('Error running migrations in production:', error);
       }
     }
   }
@@ -144,6 +159,18 @@ export class DrizzleModule implements OnModuleInit {
       BEGIN
         IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'verification_level') THEN
           CREATE TYPE verification_level AS ENUM ('basic', 'verified', 'premium');
+        END IF;
+      END
+      $$;
+    `);
+
+    // 6. Buat enum 'wallet_transaction_type' jika belum ada
+    console.log('Ensuring wallet_transaction_type enum...');
+    await this.drizzleService.db.execute(sql`
+      DO $$
+      BEGIN
+        IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'wallet_transaction_type') THEN
+          CREATE TYPE wallet_transaction_type AS ENUM ('deposit', 'withdrawal', 'waste_sale');
         END IF;
       END
       $$;

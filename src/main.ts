@@ -3,7 +3,6 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe, VersioningType } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
-import * as cors from 'cors';
 import helmet from 'helmet';
 import * as Sentry from '@sentry/node';
 
@@ -28,15 +27,18 @@ async function bootstrap() {
   // Security middleware
   app.use(helmet());
 
-  // Fix CORS configuration
-  const corsOptions = {
+  // Konfigurasi CORS yang lebih lengkap
+  app.enableCors({
     origin: [
-      process.env.FRONTEND_URL || 'http://localhost:3000',
+      'http://localhost:3000',
+      process.env.FRONTEND_URL,
       'https://gcb-frontend.vercel.app'
     ],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     credentials: true,
-  };
-  app.use(cors(corsOptions));
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+    maxAge: 86400, // 24 jam untuk cache preflight request
+  });
 
   // Validasi
   app.useGlobalPipes(

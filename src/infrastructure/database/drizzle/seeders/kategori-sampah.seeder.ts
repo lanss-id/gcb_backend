@@ -11,62 +11,134 @@ export const seedKategoriSampah = async (drizzleService: DrizzleService) => {
       return;
     }
 
-    // Data kategori sampah
+    // Data kategori sampah dengan harga realistis
     const kategoriSampahData = [
+      // Kategori Sampah Plastik
       {
-        name: 'Plastik PET',
-        description: 'Botol plastik minuman, botol minyak goreng, botol kecap, dll.',
+        name: 'PET (Polyethylene Terephthalate)',
+        description: 'Botol plastik bening seperti botol air mineral, botol minuman bersoda, dll.',
         unit: 'kg',
         imageUrl: 'https://example.com/images/plastik_pet.jpg',
         isActive: '1',
       },
       {
-        name: 'Plastik HDPE',
-        description: 'Botol shampoo, botol sabun, botol deterjen, ember, dll.',
+        name: 'HDPE (High-Density Polyethylene)',
+        description: 'Plastik keras seperti botol shampo, botol deterjen, galon air, dll.',
         unit: 'kg',
         imageUrl: 'https://example.com/images/plastik_hdpe.jpg',
         isActive: '1',
       },
       {
-        name: 'Kertas HVS',
-        description: 'Kertas putih bekas cetak atau fotokopi.',
+        name: 'PP (Polypropylene)',
+        description: 'Plastik kemasan seperti gelas plastik, tutup botol, kemasan makanan, dll.',
+        unit: 'kg',
+        imageUrl: 'https://example.com/images/plastik_pp.jpg',
+        isActive: '1',
+      },
+      {
+        name: 'LDPE (Low-Density Polyethylene)',
+        description: 'Plastik lunak seperti kantong kresek, plastik pembungkus, dll.',
+        unit: 'kg',
+        imageUrl: 'https://example.com/images/plastik_ldpe.jpg',
+        isActive: '1',
+      },
+      {
+        name: 'Plastik Campur',
+        description: 'Berbagai jenis plastik yang tercampur.',
+        unit: 'kg',
+        imageUrl: 'https://example.com/images/plastik_campur.jpg',
+        isActive: '1',
+      },
+
+      // Kategori Sampah Kertas
+      {
+        name: 'HVS/Kertas Putih',
+        description: 'Kertas kantor, fotokopi, buku tulis, dll.',
         unit: 'kg',
         imageUrl: 'https://example.com/images/kertas_hvs.jpg',
         isActive: '1',
       },
       {
-        name: 'Kardus',
-        description: 'Kardus bekas kemasan produk.',
+        name: 'Kardus/Karton',
+        description: 'Kardus kemasan, karton bekas, dll.',
         unit: 'kg',
         imageUrl: 'https://example.com/images/kardus.jpg',
         isActive: '1',
       },
       {
-        name: 'Kaleng Aluminium',
-        description: 'Kaleng minuman, makanan, dan produk aerosol.',
+        name: 'Kertas Koran',
+        description: 'Koran bekas, majalah, dll.',
         unit: 'kg',
-        imageUrl: 'https://example.com/images/kaleng_aluminium.jpg',
+        imageUrl: 'https://example.com/images/kertas_koran.jpg',
+        isActive: '1',
+      },
+      {
+        name: 'Kertas Campur',
+        description: 'Buku bekas, kertas berwarna, dll.',
+        unit: 'kg',
+        imageUrl: 'https://example.com/images/kertas_campur.jpg',
+        isActive: '1',
+      },
+
+      // Kategori Sampah Logam
+      {
+        name: 'Aluminium',
+        description: 'Kaleng minuman, komponen elektronik, dll.',
+        unit: 'kg',
+        imageUrl: 'https://example.com/images/aluminium.jpg',
         isActive: '1',
       },
       {
         name: 'Besi',
-        description: 'Besi bekas, peralatan rumah tangga, dll.',
+        description: 'Paku, besi konstruksi, peralatan rumah tangga, dll.',
         unit: 'kg',
         imageUrl: 'https://example.com/images/besi.jpg',
         isActive: '1',
       },
       {
-        name: 'Kaca',
-        description: 'Botol kaca, wadah kaca, dll.',
+        name: 'Tembaga',
+        description: 'Kabel tembaga, komponen elektronik, dll.',
         unit: 'kg',
-        imageUrl: 'https://example.com/images/kaca.jpg',
+        imageUrl: 'https://example.com/images/tembaga.jpg',
         isActive: '1',
       },
       {
-        name: 'Sampah Organik',
-        description: 'Sisa makanan, daun kering, ranting, dll.',
+        name: 'Kuningan',
+        description: 'Keran air, hiasan logam, dll.',
         unit: 'kg',
-        imageUrl: 'https://example.com/images/organik.jpg',
+        imageUrl: 'https://example.com/images/kuningan.jpg',
+        isActive: '1',
+      },
+
+      // Kategori Sampah Elektronik (E-Waste)
+      {
+        name: 'Baterai Bekas',
+        description: 'Baterai AA, AAA, baterai lithium, dll.',
+        unit: 'kg',
+        imageUrl: 'https://example.com/images/baterai.jpg',
+        isActive: '1',
+      },
+      {
+        name: 'Komponen Elektronik',
+        description: 'PCB, chip, komponen komputer, dll.',
+        unit: 'kg',
+        imageUrl: 'https://example.com/images/elektronik.jpg',
+        isActive: '1',
+      },
+
+      // Kategori Sampah Kaca
+      {
+        name: 'Botol Kaca',
+        description: 'Botol minuman, botol kecap, dll.',
+        unit: 'kg',
+        imageUrl: 'https://example.com/images/botol_kaca.jpg',
+        isActive: '1',
+      },
+      {
+        name: 'Pecahan Kaca',
+        description: 'Kaca jendela, gelas pecah, dll.',
+        unit: 'kg',
+        imageUrl: 'https://example.com/images/pecahan_kaca.jpg',
         isActive: '1',
       },
     ];

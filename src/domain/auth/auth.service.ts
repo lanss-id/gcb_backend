@@ -227,6 +227,30 @@ export class AuthService {
     // Tanpa try/catch karena tidak kritis untuk proses login
     await this.userRepository.updateLastLogin(user.id);
 
+    // Dapatkan data nasabah jika ada
+    let firstName = '';
+    let lastName = '';
+    let balance = 0;
+
+    // Ambil data nasabah jika role adalah nasabah
+    if (user.role === 'nasabah') {
+      const nasabah = await this.userRepository.findNasabahById(user.id);
+      if (nasabah) {
+        firstName = nasabah.firstName || '';
+        lastName = nasabah.lastName || '';
+        balance = nasabah.balance || 0;
+      }
+    }
+
+    // Ambil data bank sampah jika role adalah bank_sampah
+    let bankName = '';
+    if (user.role === 'bank_sampah') {
+      const bankData = await this.userRepository.findWasteBankById(user.id);
+      if (bankData) {
+        bankName = bankData.name || '';
+      }
+    }
+
     return {
       accessToken: this.jwtService.sign(payload),
       user: {
@@ -235,6 +259,10 @@ export class AuthService {
         phone: user.phone,
         role: user.role,
         isVerified: user.isVerified === 1,
+        firstName,
+        lastName,
+        balance,
+        bankName
       },
     };
   }

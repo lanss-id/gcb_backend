@@ -40,6 +40,13 @@ export const verificationLevelEnum = pgEnum('verification_level', [
   'premium',
 ]);
 
+// Enum untuk tipe wallet transaction
+export const walletTransactionTypeEnum = pgEnum('wallet_transaction_type', [
+  'deposit',
+  'withdrawal',
+  'waste_sale',
+]);
+
 // User tables
 export const users = pgTable('users', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -71,6 +78,32 @@ export const nasabah = pgTable('nasabah', {
   currentProgress: numeric('current_progress').default('0'),
   signatureUrl: text('signature_url'),
   preferredPaymentMethod: text('preferred_payment_method'),
+});
+
+// Wallet tables
+export const wallet = pgTable('wallet', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  nasabahId: uuid('nasabah_id')
+    .references(() => nasabah.id)
+    .notNull(),
+  balance: numeric('balance').default('0').notNull(),
+  isActive: numeric('is_active').default('1'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+export const walletTransaction = pgTable('wallet_transaction', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  walletId: uuid('wallet_id')
+    .references(() => wallet.id)
+    .notNull(),
+  amount: numeric('amount').notNull(),
+  transactionType: walletTransactionTypeEnum('transaction_type').notNull(),
+  notes: text('notes'),
+  referenceId: uuid('reference_id'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  status: statusEnum('status').default('completed').notNull(),
+  bankSampahId: uuid('bank_sampah_id').references(() => bankSampah.id),
 });
 
 export const bankSampah = pgTable('bank_sampah', {
@@ -197,6 +230,8 @@ export const transaksiNasabah = pgTable('transaksi_nasabah', {
   locationLatitude: numeric('location_latitude'),
   locationLongitude: numeric('location_longitude'),
   digitalSignature: text('digital_signature'),
+  qrCode: text('qr_code'),
+  qrGeneratedAt: timestamp('qr_generated_at'),
 });
 
 export const detailTransaksiNasabah = pgTable('detail_transaksi_nasabah', {
